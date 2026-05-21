@@ -15,8 +15,31 @@ const port = process.env.PORT || 3001;
 const MONGO_URL=process.env.MONGO_URL;
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  ...(process.env.FRONTEND_URLS || '').split(',').map((origin) => origin.trim()),
   'https://synapse-ai-ten-sable.vercel.app/',
 ].filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const isAllowedOrigin =
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app');
+
+    if (isAllowedOrigin) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200,
+};
 
 
 // middleware
@@ -25,14 +48,8 @@ app.use(cookieParser());//frontend mai use kar payenge iss se
 app.use(requestLogger);
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.get('/', (req, res) => {
   res.send('Hello world')
