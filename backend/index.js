@@ -16,7 +16,8 @@ const MONGO_URL=process.env.MONGO_URL;
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   ...(process.env.FRONTEND_URLS || '').split(',').map((origin) => origin.trim()),
-  'https://synapse-ai-ten-sable.vercel.app/',
+  'http://localhost:5173',
+  'http://localhost:5174',
 ].filter(Boolean);
 
 const corsOptions = {
@@ -49,7 +50,7 @@ app.use(requestLogger);
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 app.get('/', (req, res) => {
   res.send('Hello world')
