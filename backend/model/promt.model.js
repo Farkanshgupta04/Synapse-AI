@@ -13,7 +13,15 @@ const promtSchema=new mongoose.Schema({
    },
    content:{
     type:String,
-    required:true,
+      required:true,
+   },
+   image: {
+      type: String,
+      default: null,
+   },
+   images: {
+     type: [String],
+     default: [],
    },
    createdAt:{
     type:Date,
@@ -21,5 +29,8 @@ const promtSchema=new mongoose.Schema({
    }
     
 });
+
+promtSchema.index({ userId: 1, createdAt: -1 });
+promtSchema.index({ userId: 1, role: 1, createdAt: -1 });
 
 export const Promt = mongoose.model("Promt",promtSchema);

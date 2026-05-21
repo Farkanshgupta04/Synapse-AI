@@ -2,6 +2,7 @@ import {User} from "../model/user.model.js"
 import config from "../config.js"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from 'google-auth-library';
 
 export const signup= async (req,res)=>{
  //destructuring js use here
@@ -11,7 +12,10 @@ export const signup= async (req,res)=>{
     try {
         const user=await User.findOne({email:email});
         if(user){
-            return res.status(401).json({errors:"User already exist"});
+                        return res.status(409).json({
+                            success: false,
+                            error: { message: 'Email already registered' }
+                        });
         }
         const hashpassword=await bcrypt.hash(password,10);
 
@@ -22,11 +26,17 @@ export const signup= async (req,res)=>{
             password:hashpassword,
         });
         await newuser.save();
-        return res.status(201).json({message:"User signup succeeded"});
+                return res.status(201).json({
+                    success: true,
+                    message: 'User signup successful'
+                });
         
     } catch (error) {
         console.log("Error in signup: ",error);
-        return res.status(500).json({errors:"Error in signup"}); 
+                res.status(500).json({
+                    success: false,
+                    error: { message: 'Error creating user account' }
+                });
     }
 }
 
@@ -35,11 +45,17 @@ export const login=async (req,res) => {
     try {
         const user=await User.findOne({email:email});
         if(!user){
-            return res.status(403).json({errors:"Invalid Credentials"})
+                        return res.status(401).json({
+                            success: false,
+                            error: { message: 'Invalid email or password' }
+                        });
         }
          const isPasswordCorrect=await bcrypt.compare(password,user.password);
           if(!isPasswordCorrect){
-            return res.status(403).json({errors:"Invalid Credentials"})
+                        return res.status(401).json({
+                            success: false,
+                            error: { message: 'Invalid email or password' }
+                        });
         }
         //jwt code
         const token=jwt.sign({id:user._id},config.JWT_USER_PASSWORD,{
@@ -49,15 +65,27 @@ export const login=async (req,res) => {
             expires:new Date(Date.now() + 24 * 60 * 60 * 1000),
             httpOnly:true,
             secure:process.env.NODE_ENV==="production",
-            sameSite:"Strict"
+                        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax"
             //frontend mai use hoga cookie ka
         }
         res.cookie("jwt",token,cookiesOptions);
-        return res.status(201)
-        .json({message:"User Login Successful",user,token});
+                return res.status(200).json({
+                    success: true,
+                    message: 'Login successful',
+                    user: {
+                        id: user._id,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        email: user.email
+                    },
+                    token
+                });
     } catch (error) {
          console.log("Error in login: ",error);
-        return res.status(500).json({errors:"Error in login"});
+                res.status(500).json({
+                    success: false,
+                    error: { message: 'Login failed' }
+                });
     }
 }
 
@@ -65,10 +93,105 @@ export const login=async (req,res) => {
 export const logout=(req,res)=>{
     try {
         res.clearCookie("jwt")
-        return res.status(201)
-        .json({message:"User logout Successful"});
+                return res.status(200).json({
+                    success: true,
+                    message: 'Logout successful'
+                });
     } catch (error) {
          console.log("Error in logout: ",error);
-        return res.status(500).json({errors:"Error in logout"});
+                res.status(500).json({
+                    success: false,
+                    error: { message: 'Logout failed' }
+                });
+    }
+}
+
+export const googleLogin = async (req, res) => {
+    const { token } = req.body;
+    try {
+        if (!token) {
+            return res.status(400).json({
+                success: false,
+                error: { message: 'Google token is required' }
+            });
+        }
+
+        // Verify Google token
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+        
+        const payload = ticket.getPayload();
+        const { email, name, picture, sub } = payload;
+
+        // Split name into first and last name
+        const nameParts = name.split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        // Find or create user
+        let user = await User.findOne({ email });
+        
+        if (!user) {
+            // Create new user for Google login
+            user = new User({
+                firstName,
+                lastName,
+                email,
+                password: 'google_oauth_' + sub, // Password not used for Google login
+                googleId: sub,
+                profilePicture: picture
+            });
+            await user.save();
+        } else if (!user.googleId) {
+            // Update existing user with Google ID
+            user.googleId = sub;
+            if (picture) user.profilePicture = picture;
+            await user.save();
+        }
+
+        // Generate JWT token
+        const jwtToken = jwt.sign({ id: user._id }, config.JWT_USER_PASSWORD, {
+            expiresIn: "1d"
+        });
+
+        const cookiesOptions = {
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax"
+        };
+
+        res.cookie("jwt", jwtToken, cookiesOptions);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Google login successful',
+            user: {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                profilePicture: user.profilePicture
+            },
+            token: jwtToken
+        });
+
+    } catch (error) {
+        console.log("Error in Google login: ", error);
+        
+        let errorMessage = 'Google login failed';
+        if (error.message.includes('Token used too late')) {
+            errorMessage = 'Token has expired';
+        } else if (error.message.includes('Invalid token')) {
+            errorMessage = 'Invalid Google token';
+        }
+
+        res.status(401).json({
+            success: false,
+            error: { message: errorMessage }
+        });
     }
 }

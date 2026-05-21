@@ -17,8 +17,18 @@ const userSchema=new mongoose.Schema({
     password:{
         type:String,
         required:true
+    },
+    googleId:{
+        type:String,
+        default:null
+    },
+    profilePicture:{
+        type:String,
+        default:null
     }
     
 })
+
+userSchema.index({ firstName: 1, lastName: 1 });
 
 export const User = mongoose.model("User",userSchema);

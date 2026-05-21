@@ -7,28 +7,28 @@ function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-[#1e1e1e] text-white overflow-hidden">
+    <div className="flex min-h-screen bg-[#1e1e1e] text-white hide-scrollbar">
       {/* Sidebar (slide-in) */}
       <div
         className={`fixed top-0 left-0 h-full w-64 bg-[#232327] transition-transform z-40
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        md:translate-x-0 md:relative md:flex-shrink-0`}
+        md:translate-x-0 md:fixed md:h-screen md:flex-shrink-0`}
       >
-        <Sidebar />
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col w-full md:ml-64">
+  <div className="flex-1 flex min-w-0 flex-col w-full md:ml-64">
         {/* Header for mobile */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-700">
-          <div className="text-xl font-bold">deepseek</div>
+          <div className="text-xl font-bold">Synapse AI</div>
           <button onClick={() => setIsSidebarOpen(true)}>
             <Menu className="w-6 h-6 text-gray-300" />
           </button>
         </div>
 
         {/* Message area */}
-        <div className="flex-1 flex items-center justify-center px-2 sm:px-6">
+        <div className="flex-1 flex items-center justify-center w-full overflow-hidden min-h-0">
           <Promt />
         </div>
       </div>
