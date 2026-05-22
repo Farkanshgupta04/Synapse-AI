@@ -178,11 +178,11 @@ function Login() {
         {/* Terms & Condition */}
         <p className="text-xs text-gray-400 mt-4 mb-6">
           By signing up or logging in, you consent to Synapse AI{" "}
-          <a className="underline" href="">
+          <a className="underline" href="#" onClick={(e) => e.preventDefault()}>
             Terms of Use
           </a>{" "}
           and{" "}
-          <a className=" underline" href="">
+          <a className="underline" href="#" onClick={(e) => e.preventDefault()}>
             Privacy Policy
           </a>{" "}
           .
@@ -228,9 +228,9 @@ function Login() {
 
         {/* Links */}
         <div className="flex justify-between mt-4 text-sm">
-          <a className="text-[#7a6ff6] hover:underline" href="">
+          <Link className="text-[#7a6ff6] hover:underline" to="/signup">
             Haven't account?
-          </a>
+          </Link>
           <Link className="text-[#7a6ff6] hover:underline" to={"/signup"}>
             Signup
           </Link>
