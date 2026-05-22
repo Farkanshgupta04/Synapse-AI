@@ -4,6 +4,39 @@ import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from 'google-auth-library';
 
+const GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
+
+const extractGoogleProfile = async (googleToken) => {
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: googleToken,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+        if (payload?.email) {
+            return payload;
+        }
+    } catch (verifyError) {
+        const userInfoResponse = await fetch(GOOGLE_USERINFO_URL, {
+            headers: {
+                Authorization: `Bearer ${googleToken}`,
+            },
+        });
+
+        if (!userInfoResponse.ok) {
+            const responseText = await userInfoResponse.text().catch(() => '');
+            throw new Error(responseText || verifyError.message || 'Unable to verify Google token');
+        }
+
+        return await userInfoResponse.json();
+    }
+
+    throw new Error('Unable to verify Google token');
+};
+
 export const signup= async (req,res)=>{
  //destructuring js use here
     const {firstName,lastName,email,password}=req.body;
@@ -116,14 +149,7 @@ export const googleLogin = async (req, res) => {
             });
         }
 
-        // Verify Google token
-        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-        const ticket = await client.verifyIdToken({
-            idToken: googleToken,
-            audience: process.env.GOOGLE_CLIENT_ID
-        });
-        
-        const payload = ticket.getPayload();
+        const payload = await extractGoogleProfile(googleToken);
         const { email, name, picture, sub } = payload;
 
         // Split name into first and last name
