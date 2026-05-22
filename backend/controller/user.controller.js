@@ -107,9 +107,9 @@ export const logout=(req,res)=>{
 }
 
 export const googleLogin = async (req, res) => {
-    const { token } = req.body;
+    const googleToken = req.body.token || req.body.credential;
     try {
-        if (!token) {
+        if (!googleToken) {
             return res.status(400).json({
                 success: false,
                 error: { message: 'Google token is required' }
@@ -119,7 +119,7 @@ export const googleLogin = async (req, res) => {
         // Verify Google token
         const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
         const ticket = await client.verifyIdToken({
-            idToken: token,
+            idToken: googleToken,
             audience: process.env.GOOGLE_CLIENT_ID
         });
         
@@ -166,7 +166,7 @@ export const googleLogin = async (req, res) => {
 
         res.cookie("jwt", jwtToken, cookiesOptions);
 
-        return res.status(200).json({
+        const responsePayload = {
             success: true,
             message: 'Google login successful',
             user: {
@@ -177,7 +177,18 @@ export const googleLogin = async (req, res) => {
                 profilePicture: user.profilePicture
             },
             token: jwtToken
-        });
+        };
+
+        const wantsJson = req.is('application/json') || (req.headers.accept || '').includes('application/json');
+
+        if (wantsJson) {
+            return res.status(200).json(responsePayload);
+        }
+
+        const frontendUrl = new URL(process.env.FRONTEND_URL || 'http://localhost:5173');
+        frontendUrl.hash = `/login?authToken=${encodeURIComponent(jwtToken)}&authUser=${encodeURIComponent(JSON.stringify(responsePayload.user))}`;
+
+        return res.redirect(302, frontendUrl.toString());
 
     } catch (error) {
         console.log("Error in Google login: ", error);
