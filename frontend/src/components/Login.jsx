@@ -25,9 +25,42 @@ function Login() {
   const [, setAuthUser] = useAuth();
 
   const googleLoginTrigger = useGoogleLogin({
-    flow: 'auth-code',
-    ux_mode: 'redirect',
-    redirect_uri: apiUrl('/user/google-login'),
+    // Use popup/implicit flow so we receive an ID token/credential in the client
+    // then POST it to the backend endpoint which expects a token in the body.
+    onSuccess: async (response) => {
+      setLoading(true);
+      setError("");
+      try {
+        const token = response?.credential || response?.access_token || response?.code;
+        if (!token) throw new Error('No token received from Google');
+
+        const { data } = await axios.post(
+          apiUrl('/user/google-login'),
+          { token },
+          { withCredentials: true }
+        );
+
+        const normalizedUser = {
+          ...data.user,
+          id: data.user?.id || data.user?._id || null,
+          _id: data.user?.id || data.user?._id || null,
+        };
+
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(normalizedUser));
+        localStorage.setItem('token', data.token);
+        localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
+        setAuthUser(data.token);
+        navigate('/dashboard');
+      } catch (err) {
+        let msg = 'Google sign in failed';
+        if (err?.response?.data?.error?.message) msg = err.response.data.error.message;
+        else if (err?.message) msg = err.message;
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
     onError: () => setError('Google sign in failed'),
   });
 
