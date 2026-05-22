@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthProvider";
 import { apiUrl } from "../config";
-import { GoogleLogin } from "@react-oauth/google";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const STORAGE_KEYS = {
   TOKEN: 'auth_token',
@@ -23,6 +23,13 @@ function Login() {
   const location = useLocation();
 
   const [, setAuthUser] = useAuth();
+
+  const googleLoginTrigger = useGoogleLogin({
+    flow: 'auth-code',
+    ux_mode: 'redirect',
+    redirect_uri: apiUrl('/user/google-login'),
+    onError: () => setError('Google sign in failed'),
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -186,15 +193,19 @@ function Login() {
         </div>
 
         <div className="flex justify-center w-full">
-          <GoogleLogin
-            ux_mode="redirect"
-            login_uri={apiUrl("/user/google-login")}
-            theme="filled_blue"
-            text="signin_with"
-            shape="rectangular"
-            size="large"
-            width="360"
-          />
+          <button
+            type="button"
+            onClick={() => googleLoginTrigger()}
+            className="w-full inline-flex items-center justify-center gap-3 bg-white text-black font-semibold py-3 rounded-lg transition hover:brightness-95"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 533.5 544.3" className="w-5 h-5">
+              <path fill="#4285F4" d="M533.5 278.4c0-17.4-1.6-34.1-4.7-50.4H272v95.4h147.1c-6.4 34.8-25.1 64.3-53.6 84v69h86.6c50.6-46.6 81.4-115.3 81.4-198z"/>
+              <path fill="#34A853" d="M272 544.3c73.6 0 135.4-24.4 180.6-66.3l-86.6-69c-24.1 16.2-54.9 25.9-94 25.9-72 0-133-48.6-154.8-114.1H30.1v71.6C75.9 483.3 167.7 544.3 272 544.3z"/>
+              <path fill="#FBBC05" d="M117.2 323.8c-10.9-32.2-10.9-66.9 0-99.1V153.1H30.1c-39.6 79.3-39.6 172.9 0 252.2l87.1-81.5z"/>
+              <path fill="#EA4335" d="M272 107.7c39.6 0 75 13.6 103 40.4l77.2-77.2C407.4 24.5 345.6 0 272 0 167.7 0 75.9 60.9 30.1 153.1l87.1 71.6C139 156.3 200 107.7 272 107.7z"/>
+            </svg>
+            <span>Sign in with Google</span>
+          </button>
         </div>
 
         {/* Links */}
