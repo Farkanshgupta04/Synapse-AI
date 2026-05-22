@@ -44,6 +44,7 @@ const corsOptions = {
 
 
 // middleware
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());//frontend mai use kar payenge iss se 
 app.use(requestLogger);
