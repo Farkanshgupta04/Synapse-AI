@@ -24,11 +24,12 @@ function Signup() {
   const [, setAuthUser] = useAuth();
 
   const googleLoginTrigger = useGoogleLogin({
+    scope: 'openid profile email',
     onSuccess: async (response) => {
       setLoading(true);
       setError("");
       try {
-        const token = response?.credential || response?.access_token || response?.code;
+        const token = response?.access_token || response?.credential || response?.code;
         if (!token) throw new Error('No token received from Google');
 
         const { data } = await axios.post(
