@@ -1,38 +1,36 @@
 import { Eye } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from "../context/AuthProvider";
 import { apiUrl } from "../config";
+import { useAuth } from "../context/AuthProvider";
 import { useGoogleLogin } from "@react-oauth/google";
-
-const STORAGE_KEYS = {
-  TOKEN: 'auth_token',
-  USER: 'auth_user',
-};
-
-function Login() {
+function Signup() {
   const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
   });
 
+  const STORAGE_KEYS = {
+    TOKEN: 'auth_token',
+    USER: 'auth_user',
+  };
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-
   const [, setAuthUser] = useAuth();
 
   const googleLoginTrigger = useGoogleLogin({
+    flow: 'implicit',
     scope: 'openid profile email',
-    // Use popup/implicit flow so we receive an access token in the client
-    // then POST it to the backend endpoint which can verify it via Google userinfo.
     onSuccess: async (response) => {
       setLoading(true);
       setError("");
       try {
-        const token = response?.access_token || response?.credential || response?.code;
+        const token = response?.access_token || response?.credential;
         if (!token) throw new Error('No token received from Google');
 
         const { data } = await axios.post(
@@ -65,40 +63,6 @@ function Login() {
     onError: () => setError('Google sign in failed'),
   });
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const authToken = params.get("authToken");
-
-    if (!authToken) {
-      return;
-    }
-
-    const authUserRaw = params.get("authUser");
-    const normalizedToken = authToken.trim();
-
-    try {
-      const parsedUser = authUserRaw ? JSON.parse(authUserRaw) : null;
-      if (parsedUser) {
-        const normalizedUser = {
-          ...parsedUser,
-          id: parsedUser.id || parsedUser._id || null,
-          _id: parsedUser.id || parsedUser._id || null,
-        };
-
-        localStorage.setItem("user", JSON.stringify(normalizedUser));
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(normalizedUser));
-      }
-    } catch {
-      // Ignore malformed redirect state and continue with the token.
-    }
-
-    localStorage.setItem("token", normalizedToken);
-    localStorage.setItem(STORAGE_KEYS.TOKEN, normalizedToken);
-    setAuthUser(normalizedToken);
-    navigate("/dashboard", { replace: true });
-  }, [location.search, navigate, setAuthUser]);
-
-
   const handleChange = (e) => {
     const value = e.target.value;
     const name = e.target.name;
@@ -109,13 +73,15 @@ function Login() {
     });
   };
 
-  const handleLogin = async () => {
+  const handleSignup = async () => {
     setLoading(true);
     setError("");
     try {
       const { data } = await axios.post(
-        apiUrl("/user/login"),
+        apiUrl("/user/signup"),
         {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
         },
@@ -123,19 +89,9 @@ function Login() {
           withCredentials: true,
         }
       );
-      const normalizedUser = {
-        ...data.user,
-        id: data.user?.id || data.user?._id || null,
-        _id: data.user?.id || data.user?._id || null,
-      };
-      localStorage.setItem("user", JSON.stringify(normalizedUser));
-      localStorage.setItem("token", data.token);
-      setAuthUser(data.token);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(normalizedUser));
-      localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
-      navigate("/dashboard");
+      navigate("/login");
     } catch (error) {
-        let msg = "Login failed";
+        let msg = "Signup failed";
       
         if (error?.response?.data?.error?.details) {
           // Validation errors
@@ -159,8 +115,32 @@ function Login() {
       <div className="bg-[#1e1e1e] text-white w-full max-w-md rounded-2xl p-6 shadow-lg">
         {/* Heading */}
         <h1 className="text-white items-center justify-center text-center">
-          Login
+          Signup
         </h1>
+
+        {/* firstName */}
+        <div className="mb-4 mt-2">
+          <input
+            className="w-full bg-transparent border border-gray-600 rounded-md px-4 py-3 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#7a6ff0]"
+            type="text"
+            name="firstName"
+            placeholder="firstName"
+            value={formData.firstName}
+            onChange={handleChange}
+          />
+        </div>
+
+        {/* lastName */}
+        <div className="mb-4 mt-2">
+          <input
+            className="w-full bg-transparent border border-gray-600 rounded-md px-4 py-3 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#7a6ff0]"
+            type="text"
+            name="lastName"
+            placeholder="lastName"
+            value={formData.lastName}
+            onChange={handleChange}
+          />
+        </div>
 
         {/* email */}
         <div className="mb-4 mt-2">
@@ -192,12 +172,11 @@ function Login() {
 
         {/* Error Message */}
         {error && <span className="text-red-600 text-sm mb-4">{error}</span>}
-        
+
           {/* Success Message */}
           <div className="mb-4 text-sm text-gray-300">
             {loading && <span>Please wait...</span>}
           </div>
-
         {/* Terms & Condition */}
         <p className="text-xs text-gray-400 mt-4 mb-6">
           By signing up or logging in, you consent to Synapse AI{" "}
@@ -211,13 +190,13 @@ function Login() {
           .
         </p>
 
-        {/* Login button */}
+        {/* Signup button */}
         <button
-          onClick={handleLogin}
+          onClick={handleSignup}
           disabled={loading}
           className=" w-full bg-[#7a6ff6] hover:bg-[#6c61a6] text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
         >
-          {loading ? "logging in... " : "Login"}
+          {loading ? "Signing... " : "Signup"}
         </button>
 
         <div className="my-4 flex items-center gap-3 text-xs text-gray-500">
@@ -243,17 +222,18 @@ function Login() {
         </div>
 
         {/* Links */}
-        <div className="flex justify-between mt-4 text-sm">
-          <Link className="text-[#7a6ff6] hover:underline" to="/signup">
-            Haven't account?
-          </Link>
-          <Link className="text-[#7a6ff6] hover:underline" to={"/signup"}>
-            Signup
-          </Link>
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="w-full bg-[#7a6ff6] hover:bg-[#6c61a6] text-white font-semibold py-3 rounded-lg transition"
+          >
+            Already registered? Login
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-export default Login;
+export default Signup;
