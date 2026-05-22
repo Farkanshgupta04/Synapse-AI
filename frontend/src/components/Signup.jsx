@@ -193,11 +193,11 @@ function Signup() {
         {/* Terms & Condition */}
         <p className="text-xs text-gray-400 mt-4 mb-6">
           By signing up or logging in, you consent to Synapse AI{" "}
-          <a className="underline" href="">
+          <a className="underline" href="#" onClick={(e) => e.preventDefault()}>
             Terms of Use
           </a>{" "}
           and{" "}
-          <a className=" underline" href="">
+          <a className="underline" href="#" onClick={(e) => e.preventDefault()}>
             Privacy Policy
           </a>{" "}
           .
