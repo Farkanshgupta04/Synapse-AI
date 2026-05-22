@@ -25,13 +25,14 @@ function Login() {
   const [, setAuthUser] = useAuth();
 
   const googleLoginTrigger = useGoogleLogin({
-    // Use popup/implicit flow so we receive an ID token/credential in the client
-    // then POST it to the backend endpoint which expects a token in the body.
+    scope: 'openid profile email',
+    // Use popup/implicit flow so we receive an access token in the client
+    // then POST it to the backend endpoint which can verify it via Google userinfo.
     onSuccess: async (response) => {
       setLoading(true);
       setError("");
       try {
-        const token = response?.credential || response?.access_token || response?.code;
+        const token = response?.access_token || response?.credential || response?.code;
         if (!token) throw new Error('No token received from Google');
 
         const { data } = await axios.post(
