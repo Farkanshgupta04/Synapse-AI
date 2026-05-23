@@ -104,8 +104,6 @@ Synapse AI/
 Run these from the repository root.
 
 Backend:
-
-
 npm install
 npm start
 ```
