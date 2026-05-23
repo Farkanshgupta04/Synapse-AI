@@ -105,8 +105,8 @@ Run these from the repository root.
 
 Backend:
 
-npm install
 
+npm install
 npm start
 ```
 
