@@ -104,17 +104,11 @@ Synapse AI/
 Run these from the repository root.
 
 Backend:
-
-```powershell
-cd "c:\Users\88827\Desktop\Synapse AI\backend"
 npm install
 npm start
 ```
 
 Frontend:
-
-```powershell
-cd "c:\Users\88827\Desktop\Synapse AI\frontend"
 npm install
 npm run dev
 ```
