@@ -1,331 +1,152 @@
-# Synapse AI (MERN + Gemini)
+# Synapse AI — Project Overview
 
-A full-stack Synapse AI application with authentication, protected chat API access, and AI responses powered by Gemini.
+A full-stack Synapse AI application (MERN) with JWT + optional Google OAuth authentication and AI responses powered by Gemini.
 
-## What This Project Includes
+## Summary
 
-- Frontend: React + Vite + Tailwind UI
-- Backend: Express API + JWT auth + cookies
-- Database: MongoDB with Mongoose models
-- AI: Gemini API integration via `@google/genai`
+- Backend: Express API with JWT auth, optional Google OAuth, Gemini integration, and file upload support.
+- Frontend: React + Vite + Tailwind UI; components live under `frontend/src/components/` and auth context under `frontend/src/context/`.
+- Database: MongoDB (Mongoose models in `backend/model/`).
+- Tests: middleware and model tests under `backend/test/`.
 
-## Project Structure
+## Live Demo
+
+- Project frontend (live): https://synapse-ai-ten-sable.vercel.app/
+
+## Core Structure
+
+- `backend/` — API server, controllers, middleware, Mongoose models, routes, uploads.
+- `frontend/` — React application (Vite) with UI components, auth context, and configuration.
+- `backend/test/` — unit tests for middleware and models.
+
+## New Features
+
+- Google OAuth sign-in and server-side ID token verification.
+- Google OAuth error handling added to the errors tracker.
+- Gemini model fallback and retry/backoff strategies for improved reliability.
+- File upload support using Multer with uploads saved to `backend/uploads/`.
+- Centralized global error handler returning consistent JSON responses.
+- Deployment-ready configuration (frontend: Vercel, backend: Render).
+
+## Outcome
+
+- Deliverable: a runnable MERN application that enables authenticated users to interact with an AI-driven chat service, persist chat history, upload files, and deploy to production.
+- Engineers can extend the app by adding models, routes, or frontend features; product teams can integrate the chat API into web or mobile clients.
+
+## Real-world Problem Solved
+
+- Provides an accessible AI assistant and conversational API that organizations can use to automate customer support responses, summarize and retrieve knowledge from user inputs, and speed up common tasks (e.g., FAQ answers, content drafting, or developer assistance).
+- Helps teams reduce manual response time, capture conversational context for later analysis, and prototype AI-powered features with a secure auth and deployment-ready stack.
+
+## Updated File Structure (tree — excluding top-level .md files)
 
 ```
 Synapse AI/
-	backend/
-		controller/
-		middleware/
-		model/
-		routes/
-		config.js
-		index.js
-		package.json
-		.env
-	frontend/
-		src/
-			components/
-			context/
-			App.jsx
-			main.jsx
-		package.json
+├─ backend/
+│  ├─ config.js
+│  ├─ index.js
+│  ├─ package.json
+│  ├─ uploads/
+│  ├─ controller/
+│  │  ├─ ai.controller.js
+│  │  ├─ chat.controller.js
+│  │  ├─ promt.controller.js
+│  │  └─ user.controller.js
+│  ├─ middleware/
+│  │  ├─ error.middleware.js
+│  │  ├─ promt.middleware.js
+│  │  ├─ requestLogger.middleware.js
+│  │  └─ validation.middleware.js
+│  ├─ model/
+│  │  ├─ chatMessage.model.js
+│  │  ├─ chatSession.model.js
+│  │  ├─ promt.model.js
+│  │  └─ user.model.js
+│  └─ routes/
+│     ├─ chat.route.js
+│     ├─ promt.route.js
+│     └─ user.route.js
+├─ frontend/
+│  ├─ package.json
+│  ├─ index.html
+│  ├─ postcss.config.js
+│  ├─ tailwind.config.js
+│  ├─ vite.config.js
+│  ├─ public/
+│  └─ src/
+│     ├─ main.jsx
+│     ├─ App.jsx
+│     ├─ config.js
+│     ├─ index.css
+│     ├─ assets/
+│     ├─ components/
+│     │  ├─ DemoModal.jsx
+│     │  ├─ FeatureCard.jsx
+│     │  ├─ Hero.jsx
+│     │  ├─ Home.jsx
+│     │  ├─ HowItWorks.jsx
+│     │  ├─ Login.jsx
+│     │  ├─ Promt.jsx
+│     │  ├─ Sidebar.jsx
+│     │  ├─ Signup.jsx
+│     │  └─ Welcome.jsx
+│     └─ context/
+│        └─ AuthProvider.jsx
+└─ backend/test/
+   ├─ error.middleware.test.js
+   ├─ models.test.js
+   ├─ requestLogger.middleware.test.js
+   └─ validation.middleware.test.js
 ```
 
-## Tech Stack
+## Quick Setup (Windows PowerShell)
 
-- Node.js
-- Express 5
-- MongoDB + Mongoose
-- JWT (`jsonwebtoken`)
-- bcrypt (`bcryptjs`)
-- React 19
-- Vite (rolldown-vite)
-- Tailwind CSS
-- Axios
-- React Router
-
-## Prerequisites
-
-- Node.js 18+ recommended
-- npm 9+ recommended
-- MongoDB connection
-	- Option 1: MongoDB Atlas cluster
-	- Option 2: Local MongoDB server
-- Gemini API key
-
-## Environment Setup (Backend)
-
-Create `backend/.env` with these variables:
-
-```
-PORT=3000
-MONGO_URL=mongodb+srv://<username>:<password>@<cluster-url>/<db-name>?retryWrites=true&w=majority
-JWT_PASSWORD=your_jwt_secret
-NODE_ENV=development
-GEMINI_API_KEY=your_gemini_api_key
-FRONTEND_URL=http://localhost:5173
-```
-
-### Variable Meaning
-
-- `PORT`: backend API port
-- `MONGO_URL`: MongoDB connection string
-- `JWT_PASSWORD`: secret key used to sign and verify JWTs
-- `NODE_ENV`: set `development` for local dev
-- `GEMINI_API_KEY`: key used by Gemini API calls
-- `FRONTEND_URL`: allowed CORS origin for frontend
-
-## Deployment Setup
-
-This project is set up for a Vercel frontend and a Render backend.
-
-Backend on Render:
-
-- Set the service root to the `backend` folder
-- Use `npm install` as the build step if your Render service requires it
-- Use `npm start` as the start command
-- Add the backend environment variables from `backend/.env.example`
-- Set `FRONTEND_URL` to your Vercel app URL
-
-Frontend on Vercel:
-
-- Set the project root to the `frontend` folder
-- Use `npm run build` as the build command
-- Add `VITE_API_BASE_URL` with your Render backend base URL
-- Redeploy after updating the backend URL so the frontend points to the live API
-
-Important:
-
-- If you already committed real credentials/keys, rotate them immediately.
-- Keep `.env` private and never commit production secrets.
-
-## Install Dependencies
-
-Run each command from the correct folder.
+Run these from the repository root.
 
 Backend:
 
-```
-cd backend
+```powershell
+cd "c:\Users\88827\Desktop\Synapse AI\backend"
 npm install
+npm start
 ```
 
 Frontend:
 
-```
-cd frontend
+```powershell
+cd "c:\Users\88827\Desktop\Synapse AI\frontend"
 npm install
-```
-
-## Run Locally
-
-Use two terminals.
-
-Terminal 1 (backend):
-
-```
-cd backend
-npm start
-```
-
-Expected logs include:
-
-- `Server is running on port 3000`
-- `Connected to MongoDB`
-
-Terminal 2 (frontend):
-
-```
-cd frontend
 npm run dev
 ```
 
-Expected output includes:
+## Environment Variables (backend/.env)
 
-- `Local: http://localhost:5173/`
+```
+PORT=3000
+MONGO_URL=your_mongo_connection_string
+JWT_PASSWORD=your_jwt_secret
+NODE_ENV=development
+GEMINI_API_KEY=your_gemini_api_key
+FRONTEND_URL=http://localhost:5173
+GOOGLE_CLIENT_ID=your_google_client_id (optional)
+GOOGLE_CLIENT_SECRET=your_google_client_secret (optional)
+```
 
-Open the app at:
+## Endpoints (local)
 
-- `http://localhost:5173`
-
-## Authentication and Chat Flow
-
-1. User signs up from frontend.
-2. Backend stores user with hashed password.
-3. User logs in.
-4. Backend returns JWT and also sets `jwt` cookie.
-5. Frontend stores token in localStorage.
-6. Chat request sends `Authorization: Bearer <token>` header.
-7. Middleware verifies JWT and injects `req.userId`.
-8. Backend saves user prompt, calls Gemini, saves AI response, and returns the reply.
-
-## API Endpoints
-
-Base URL:
-
-- `http://localhost:3000/api/v1`
-
-User routes:
+Base: `http://localhost:3000/api/v1`
 
 - `POST /user/signup`
 - `POST /user/login`
 - `GET /user/logout`
+- `POST /synapse-ai/promt` (protected)
 
-Prompt route:
+## Troubleshooting pointers
 
-- `POST /synapse-ai/promt` (protected, requires Bearer token)
+- Check `ERRORS_AND_CAUSES.md` for common failures and resolutions.
+- Verify `MONGO_URL`, `JWT_PASSWORD`, and Gemini/Google credentials are set for local and production environments.
+- If file uploads fail, ensure `backend/uploads/` exists and is writable.
 
-### Sample Request: Signup
+---
 
-```
-POST /api/v1/user/signup
-Content-Type: application/json
-
-{
-	"firstName": "John",
-	"lastName": "Doe",
-	"email": "john@example.com",
-	"password": "12345678"
-}
-```
-
-### Sample Request: Login
-
-```
-POST /api/v1/user/login
-Content-Type: application/json
-
-{
-	"email": "john@example.com",
-	"password": "12345678"
-}
-```
-
-### Sample Request: Chat Prompt
-
-```
-POST /api/v1/synapse-ai/promt
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-	"content": "Explain recursion with a simple JavaScript example"
-}
-```
-
-Expected response:
-
-```
-{
-	"reply": "...AI generated response..."
-}
-```
-
-## Data Models
-
-User model:
-
-- `firstName` (String, required)
-- `lastName` (String, required)
-- `email` (String, required, unique)
-- `password` (String, required, hashed)
-
-Promt model:
-
-- `userId` (ObjectId, ref User, required)
-- `role` (`user` or `assisstant`)
-- `content` (String, required)
-- `createdAt` (Date)
-
-Note: The project currently uses `promt`/`assisstant` spellings in route/model names. These are functional but non-standard spellings.
-
-## Frontend Routes
-
-- `/login` for login
-- `/signup` for registration
-- `/` for main chat (protected by client auth state)
-
-## Build and Lint
-
-Frontend build:
-
-```
-cd frontend
-npm run build
-```
-
-Frontend lint:
-
-```
-cd frontend
-npm run lint
-```
-
-Backend currently has no test suite configured.
-
-## Common Troubleshooting
-
-### MongoDB Connection Error
-
-Symptoms:
-
-- `MongoDB Connection Error`
-- DNS errors like `ENOTFOUND`
-
-Checks:
-
-- verify `MONGO_URL` in `backend/.env`
-- verify Atlas cluster is active
-- verify DB user/password are correct
-- verify IP/network access settings in Atlas
-- try local MongoDB URI for local development
-
-Local MongoDB URI example:
-
-```
-MONGO_URL=mongodb://127.0.0.1:27017/synapse_ai
-```
-
-### CORS Error in Browser
-
-Checks:
-
-- ensure frontend runs on `http://localhost:5173`
-- ensure `FRONTEND_URL=http://localhost:5173` in backend `.env`
-- restart backend after changing `.env`
-
-### 401 No Token / Invalid Token
-
-Checks:
-
-- login first to receive token
-- confirm frontend sends `Authorization: Bearer <token>`
-- clear localStorage and login again if token expired
-- keep `JWT_PASSWORD` stable between server restarts
-
-### Gemini API Fails
-
-Checks:
-
-- verify `GEMINI_API_KEY` is valid
-- ensure billing/quota is available for the key
-- inspect backend logs for request errors
-
-## Known Limitations
-
-- Prompt history in UI is currently stored in localStorage per user.
-- Backend saves prompts in DB, but no API to fetch full chat history yet.
-- No refresh token flow.
-- No automated backend tests.
-
-## Suggested Next Improvements
-
-- Add `.env.example` without secrets.
-- Add backend health endpoint with DB readiness status.
-- Add prompt history API with pagination.
-- Add request validation with schema validation library.
-- Add backend test setup (Jest/Vitest + supertest).
-
-## License
-
-ISC
+For a compact project README that stays in source control, consider renaming this file to `README_PROJECT.md` or linking it from the main `README.md`.
